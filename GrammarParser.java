@@ -7,25 +7,10 @@
  * 
  * ************Need to implement recursive descent parser to start reading the part of the command that comes after the initial call
  * ************For example i think it is needed for the part after CREATE TABLE in CREATE TABLE users(id int PRIMARY KEY, name varchar(10)) but im not sure yet
- */
-
+ *///Nothing is checking for semicolons yet. need to do that still
+//rn just checking for syntax. eventually need it to start actually doing the commands
 //tokens[tokenMaker.position] doesnt advance position. tokenMaker.check() does
-/*
- * Invalid create command # are just for testing right now, eventually should throw error
- * 
- * many things are currently just for testing and debugging
- * 
- * should probably replace tokens[tokenMaker.position] with a method in TokenMaker that just checks whats in the array but doesnt advance position
- * 
- * can also create method that check if token matches expected just to clean code up a bit
- * 
- * not taking action on command just yet, mainly focusing on validating syntax
- * 
- * very rough draft right now
- * 
- * -Ryan 
- */
-public class GrammarParser {
+public class GrammarParser {//just checking synatx so far
 	
 	private TokenMaker tokenMaker;//utilization of inner class
 	private String[] tokens;//tokens from inner class
@@ -43,6 +28,15 @@ public class GrammarParser {
 		if(current.equals("CREATE")) {
 			create();
 		}
+		else if(current.equals("INSERT")) {
+			insert();
+		}
+		else if(current.equals("DESCRIBE")) {
+			describe();
+		}
+		else if(current.equals("RENAME")) {
+			rename();
+		}
 		else {
 			System.out.println("Invalid create command 1");//invalid command detected
 		}
@@ -53,7 +47,7 @@ public class GrammarParser {
 		if(!tokenMaker.check().equals("CREATE") || !tokenMaker.check().equals("TABLE")) {//checks if it is create table
 			System.out.println("Invalid create command 2");
 		}
-		else {//-----------PICK UP FROM HERE----- start implementing the creation of tables. so far this just verifies the command
+		else {
 			System.out.println("Test Passed");//havent tested after this, still a work in progress
 			
 			
@@ -90,8 +84,8 @@ public class GrammarParser {
 		
 		parseCreateType();//type
 		
-		if(!tokens[tokenMaker.position].equals(",")) {
-		parseCreateConstraint();//primary key foreign key stuff
+		if(tokens[tokenMaker.position].equals("PRIMARY")) {
+		parseCreateConstraint();//primary key stuff, add foreign key stuff later
 		}
 	}
 	
@@ -114,6 +108,8 @@ public class GrammarParser {
 		else if(tokens[tokenMaker.position].equals("INT")) {
 			tokenMaker.check();
 		}
+		else {
+			System.out.println("Invalid create command 7");		}
 	}
 	
 	public void parseCreateConstraint() {
@@ -125,7 +121,97 @@ public class GrammarParser {
 		}
 	}
 	
+	//insert currently doesnt read a command that spans multiple lines, only works for a single line command atm
+	public void insert() {//prototype insert command read
+		if(!tokenMaker.check().equals("INSERT")) {//checks if it is create table
+			System.out.println("Invalid insert command 1");
+		}
+		else {
+			String name = tokenMaker.check();
+			
+			if(!tokenMaker.check().equals("VALUES")){//check that table name wasnt skipped
+			
+				System.out.println("Invalid insert command 2");
+				
+			}
+			else {
+				if(!tokenMaker.check().equals("(")) {
+					System.out.println("Invalid insert command 3");
+				}
+				else {
+				parseInsertList();
+				}
+			}
+			}
+	}
+	
+	public void parseInsertList() {//insert version of parse list
+		int i = 1;
+        parseInsertValues(i);//start parsing first attribute
+		
+		while(tokens[tokenMaker.position].equals(",")) {//hopefully takes each attribute and begins parsing it
+		    tokenMaker.check();//advance past comma
+			parseInsertValues(++i);//continue parsing attributes
+		}
+	}
+	
+	public void parseInsertValues(int attributeNumber) {
+		System.out.println("Attribute "+attributeNumber+": "+tokenMaker.check());
+		//need to check domain key and entity integrity constraints
+	}
+	
+	
+	//beginning of describe command
+	public void describe() {
+		if(!tokenMaker.check().equals("DESCRIBE") || !tokenMaker.check().equals("(")) {
+			System.out.println("Invalid describe command 1");
+		}
+		else {
+			String command = tokenMaker.check();
+			if(command.equals("ALL")) {
+				describeAll();
+			}
+			else {
+				describeTable(command);
+			}
+		}
+	}
+	
+	public void describeAll() {
+		System.out.println("describe all test passed");
+	}
+	public void describeTable(String tableName) {
+		System.out.println("describe table test passed table: "+tableName);
+	}
+	
+	//beginning of rename command
+	public void rename() {
+		tokenMaker.check();//burn a token
+		String tableName = tokenMaker.check();
+		
+		if(!tokenMaker.check().equals("(")) {
+			System.out.println("Invalid rename command 1");
+		}else {
+			renameList();
+		}
+	}
+	
+	public void renameList() {
+		int i = 1;
+        parseRenameAttributes(i);//start parsing first attribute
+		
+		while(tokens[tokenMaker.position].equals(",")) {//hopefully takes each attribute and begins parsing it
+		    tokenMaker.check();//advance past comma
+			parseRenameAttributes(++i);//continue parsing attributes
+		}
+	}
+	
+	public void parseRenameAttributes(int attributeNumber) {
+		//test statement
+		System.out.println("Attribute "+attributeNumber+": "+tokenMaker.check());
+	}
 	//-------This is where new functions for the command should be added
+
 	
 	//Inner class that splits the original command, stores it, and increments through it.
 	public class TokenMaker{
