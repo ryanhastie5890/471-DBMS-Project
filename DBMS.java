@@ -11,6 +11,14 @@ public class DBMS {
 	public static void main(String [] args) {
 		Scanner scn = new Scanner(System.in);
 		
+		//BST test
+		BST bst = new BST();
+		int[] arr = {2,31,24,12};
+		bst.createTree(arr);
+		bst.insertValue(55);
+		bst.deletion(24);
+		bst.deletion(31);
+		bst.printAll();
 		
 		System.out.println("Welcome to DBMS");
 		
