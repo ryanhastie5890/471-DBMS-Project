@@ -37,6 +37,24 @@ public class GrammarParser {//just checking synatx so far
 		else if(current.equals("RENAME")) {
 			rename();
 		}
+		else if(current.equals("UPDATE")) {
+			update();
+		}
+		else if(current.equals("SELECT")){
+			select();
+		}
+		else if(current.equals("LET")) {
+			let();
+		}
+		else if(current.equals("DELETE")) {
+			delete();
+		}
+		else if(current.equals("INPUT")) {
+			input();
+		}
+		else if(current.equals("EXIT")) {
+			exit();
+		}
 		else {
 			System.out.println("Invalid create command 1");//invalid command detected
 		}
@@ -210,6 +228,130 @@ public class GrammarParser {//just checking synatx so far
 		//test statement
 		System.out.println("Attribute "+attributeNumber+": "+tokenMaker.check());
 	}
+	
+	//begin update methods
+	public void update() {
+		tokenMaker.check();//burn UPDATE
+		String tableName = tokenMaker.check();
+		
+		if(!tokenMaker.check().equals("SET")) {
+			System.out.println("Invalid update command 1");
+		}else {
+			parseUpdateList();
+			
+			//start parsing where statement
+		}
+	}
+	
+	public void parseUpdateList() {
+		int i = 1;
+        parseUpdateValues(i);//start parsing first attribute
+		
+        
+		while(tokenMaker.position < tokens.length && tokens[tokenMaker.position].equals(",")) {//hopefully takes each attribute and begins parsing it
+		    tokenMaker.check();//advance past comma
+			parseUpdateValues(++i);//continue parsing attributes
+		}
+	}
+	
+	public void parseUpdateValues(int attributeNumber) {
+		String name = tokenMaker.check();
+		
+		if(!tokenMaker.check().equals("=")) {
+			System.out.println("Invalid update command 2");
+		}
+		
+		String value = tokenMaker.check();
+		
+		System.out.println("Received constant "+attributeNumber+": "+name+" "+value);
+	}
+	
+	//select
+	public void select() {
+		if(!tokenMaker.check().equals("SELECT")) {
+			System.out.println("Invalid select command 1");
+		}
+		else {
+			selectNameList();
+			
+			if(!tokenMaker.check().equals("FROM")) {
+				System.out.println("Invalid select command 2");
+			}
+			else {
+				selectTablesList();
+				
+				//start where portion
+			}
+		}
+	}
+	
+	public void selectNameList() {
+		int i = 1;
+        parseAttributeNames(i);//start parsing first attribute
+		
+		while(tokenMaker.position < tokens.length &&tokens[tokenMaker.position].equals(",")) {//hopefully takes each attribute and begins parsing it
+		    tokenMaker.check();//advance past comma
+			parseAttributeNames(++i);//continue parsing attributes
+		}
+	}
+	
+	public void parseAttributeNames(int nameNumber) {
+		System.out.println("Received Attribute "+nameNumber+": "+tokenMaker.check());
+	}
+	
+	public void selectTablesList() {
+		int i = 1;
+        parseTableNames(i);//start parsing first attribute
+		
+		while(tokenMaker.position < tokens.length &&tokens[tokenMaker.position].equals(",")) {//hopefully takes each attribute and begins parsing it
+		    tokenMaker.check();//advance past comma
+			parseTableNames(++i);//continue parsing attributes
+		}
+	}
+	
+	public void parseTableNames(int tableNumber) {
+		System.out.println("Received table "+tableNumber+": "+tokenMaker.check());
+	}
+	
+	//commands below this line are not as developed as the commands above yet
+	//let
+	public void let() {
+		if(!tokenMaker.check().equals("LET")) {
+			System.out.println("Invalid let command 1");
+		}
+		else {
+			String tableName = tokenMaker.check();
+			
+			if(!tokenMaker.check().equals("KEY")) {
+				System.out.println("Invalid let command 2");
+			}else{
+				String attributeName = tokenMaker.check();
+				
+				System.out.println("let test passed");
+				//select part
+			}
+		}
+	}
+	
+	//delete
+	public void delete() {
+		tokenMaker.check();//dont need the first if in some of the other commands since it checks in the other method
+	
+		String tableName = tokenMaker.check();
+		
+		System.out.println("delete test passed");
+		//where part
+	}
+	//input
+	public void input() {
+		String fileName1 = tokenMaker.check();
+		
+		System.out.println("input test passed");
+	}
+	//exit
+	public void exit() {
+		System.out.println("exit test passed");
+	}
 	//-------This is where new functions for the command should be added
 
 	
@@ -219,7 +361,7 @@ public class GrammarParser {//just checking synatx so far
 		private int position;//keeps track of where in array it currently is
 		
 		public TokenMaker(String text) {//constructor
-			tokens = text.replace("("," ( ").replace(")", " ) ").replace(","," , ").split("\\s+"); //add white spaces to ( ) and , then split at white space
+			tokens = text.replace("("," ( ").replace(")", " ) ").replace(","," , ").replace("=", " = ").split("\\s+"); //add white spaces to ( ) and , then split at white space
 		    position = 0;
 		}
 		
