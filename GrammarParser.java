@@ -10,18 +10,30 @@
  *///Nothing is checking for semicolons yet. need to do that still
 //rn just checking for syntax. eventually need it to start actually doing the commands
 //tokens[tokenMaker.position] doesnt advance position. tokenMaker.check() does
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+
 public class GrammarParser {//just checking synatx so far
 	
 	private TokenMaker tokenMaker;//utilization of inner class
 	private String[] tokens;//tokens from inner class
 	
+	//data members to store tables
+	private ArrayList<File> metaDataFiles = new ArrayList<File>();
+	private ArrayList<File> recordFiles= new ArrayList<File>();
+	private ArrayList<File> indexFiles= new ArrayList<File>();
+	private ArrayList<BST> tableTrees= new ArrayList<BST>();
+	private ArrayList<String> tableNames= new ArrayList<String>();
 	
 	public GrammarParser(String text) {//constructor
 		tokenMaker = new TokenMaker(text);
 		tokens = tokenMaker.tokens;
+		
 	}
 	
-	public void beginParse() {//parses the initial input
+	public void beginParse() throws IOException {//parses the initial input
 		String current = tokens[tokenMaker.position];
 		
 		//add an else if for each command and then call a function that parses the relevant command
@@ -61,17 +73,45 @@ public class GrammarParser {//just checking synatx so far
 		
 	}
 	
-	public void create() {//create command
-		if(!tokenMaker.check().equals("CREATE") || !tokenMaker.check().equals("TABLE")) {//checks if it is create table
+	public void create() throws IOException {//create command
+		if(!tokenMaker.check().equals("CREATE") ) {//checks if it is create table
 			System.out.println("Invalid create command 2");
+		}else {
+		if(!(tokens[tokenMaker.position].equals("TABLE") || tokens[tokenMaker.position].equals("DATABASE")))	{
+			System.out.println("Invalid create command 2.5");
 		}
-		else {
+		  else {
 			System.out.println("Test Passed");//havent tested after this, still a work in progress
 			
+			String token = tokenMaker.check();
+			if(token.equals("DATABASE")) {
+				System.out.println("Database test");
+			}
+			else if(token.equals("TABLE")) {
+			    if(tokens[tokenMaker.position]!= "("){//check that table name wasnt skipped
 			
-			if(tokens[tokenMaker.position]!= "("){//check that table name wasnt skipped
-			
-				String tableName = tokenMaker.check();//
+				
+				String tableName = tokenMaker.check();
+				
+				//create tables and store in data members
+				File metaDataFile = new File(tableName+"MetaData.txt");
+
+				metaDataFiles.add(metaDataFile);
+				
+                File recordFile = new File(tableName+"Record.txt");
+				
+				recordFiles.add(recordFile);
+				
+                File indexFile = new File(tableName+"Index.txt");
+				
+				indexFiles.add(indexFile);
+				
+				BST tableTree = new BST();
+				
+				tableTrees.add(tableTree);
+				
+				tableNames.add(tableName);
+				
 				
 				if(!tokenMaker.check().equals("(")) {
 					System.out.println("Invalid create command 3");
@@ -81,10 +121,15 @@ public class GrammarParser {//just checking synatx so far
 				}
 				
 			}
-			else {
+			   else {
 				System.out.println("Table must have a name");
 			}
 			}
+			else {
+				System.out.println("Invalid create command; TABLE or DATABASE not read");
+			}
+		  }
+		}
 	}
 	
 	//methods work in progress, untested so far
@@ -367,7 +412,10 @@ public class GrammarParser {//just checking synatx so far
 		
 		//used for reading a token
 		public String check() {//gives current token, increments position
-			position += 1;
+
+
+
+position += 1;
 			return tokens[position-1];
 		}
 	
