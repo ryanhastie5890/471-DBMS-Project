@@ -22,10 +22,21 @@ public class DBMS {
 		
 		System.out.println("Welcome to DBMS");
 		
-		Boolean done = false;
+		
+		
 		while(!done) {
 			System.out.println("Enter Command:");
-			String command = scn.nextLine();
+			
+			Boolean doneReading = true;
+			String command = "";
+			while(doneReading) {
+			
+			String currentLine = scn.nextLine();
+			command = command + currentLine+" ";
+			if(currentLine.contains(";")) {
+				doneReading=false;
+			}
+			}
 			GrammarParser parser = new GrammarParser(command);
 			parser.beginParse();
 		}
