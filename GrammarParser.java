@@ -74,20 +74,19 @@ public class GrammarParser {//just checking synatx so far
 			exit();
 		}
 		else {
-			System.out.println("Invalid create command 1");//invalid command detected
+			System.out.println("Invalid command detected");//invalid command detected
 		}
 		
 	}
 	
 	public void create() throws IOException {//create command
-		if(!tokenMaker.check().equals("CREATE") ) {//checks if it is create table
+		if(!tokenMaker.match("CREATE") ) {//checks if it is create table
 			System.out.println("Invalid create command 2");
 		}else {
-		if(!(tokens[tokenMaker.position].equals("TABLE") || tokens[tokenMaker.position].equals("DATABASE")))	{
+		if(!(tokenMaker.peek().equals("TABLE") || tokenMaker.peek().equals("DATABASE")))	{
 			System.out.println("Invalid create command 2.5");
 		}
 		  else {
-			System.out.println("Test Passed");//havent tested after this, still a work in progress
 			
 			String token = tokenMaker.check();
 			if(token.equals("DATABASE")) {
@@ -97,25 +96,21 @@ public class GrammarParser {//just checking synatx so far
 				System.out.println("Database created");
 			}
 			else if(token.equals("TABLE")) {
-			    if(tokens[tokenMaker.position]!= "("){//check that table name wasnt skipped
-			
+			    if(!tokenMaker.match("(")){//check that table name wasnt skipped
 				
 				String tableName = tokenMaker.check();
 				
-				
-				
-				
-				if(!tokenMaker.check().equals("(")) {
+				if(!tokenMaker.match("(")) {
 					System.out.println("Invalid create command 3");
 				}
 				else {//begin parsing inside the parentheses
 					parseCreateList();
 					
-					if(!tokenMaker.check().equals(")"))
+					if(!tokenMaker.match(")"))
 					{
 						System.out.println("Missing ) character");
 					}else {
-						if(!tokenMaker.check().equals(";"))
+						if(!tokenMaker.match(";"))
 						{
 							System.out.println("Missing semicolon");
 						}
@@ -132,7 +127,7 @@ public class GrammarParser {//just checking synatx so far
 			}
 			}
 			else {
-				System.out.println("Invalid create command; TABLE or DATABASE not read");
+				System.out.println("Invalid create command, TABLE or DATABASE not read");
 			}
 		  }
 		}
@@ -142,8 +137,9 @@ public class GrammarParser {//just checking synatx so far
 	public void parseCreateList() {//starts parsing create command after the '('
 		parseCreateDefinition();//start parsing first attribute
 		
-		while(tokens[tokenMaker.position].equals(",")) {//hopefully takes each attribute and begins parsing it
-		    tokenMaker.check();//advance past comma
+		while(tokenMaker.match(",")) {//hopefully takes each attribute and begins parsing it
+		    //tokenMaker.check();//advance past comma
+			
 			parseCreateDefinition();//continue parsing attributes
 		}
 	}
@@ -153,17 +149,18 @@ public class GrammarParser {//just checking synatx so far
 		
 		parseCreateType();//type
 		
-		if(tokens[tokenMaker.position].equals("PRIMARY")) {
+		
+		if(tokenMaker.peek().equals("PRIMARY") || tokenMaker.peek().equals("FOREIGN")) {
 		parseCreateConstraint();//primary key stuff, add foreign key stuff later
 		}
 	}
 	
 	public void parseCreateType() {
-		if(tokens[tokenMaker.position].equals("VARCHAR")) {
-			tokenMaker.check();
-			if(tokenMaker.check().equals("(")) {
+		if(tokenMaker.match("VARCHAR")) {
+
+			if(tokenMaker.match("(")) {
 				String number = tokenMaker.check();
-				if(tokenMaker.check().equals(")")) {
+				if(tokenMaker.match(")")) {
 					return;
 				}
 				else {
@@ -174,18 +171,25 @@ public class GrammarParser {//just checking synatx so far
 				System.out.println("Invalid create command 5");
 			}
 		}
-		else if(tokens[tokenMaker.position].equals("INT")) {
-			tokenMaker.check();
+		else if(tokenMaker.match("INT")) {
+		
 		}
 		else {
 			System.out.println("Invalid create command 7");		}
 	}
 	
 	public void parseCreateConstraint() {
-		System.out.println(tokens[tokenMaker.position] +" and "+tokens[tokenMaker.position +1]);
-		if(tokenMaker.check().equals("PRIMARY") && tokenMaker.check().equals("KEY")) {
-			System.out.println("Primary key test passed");
-		}else {
+		//System.out.println(tokens[tokenMaker.position] +" and "+tokens[tokenMaker.position +1]);
+		if(tokenMaker.peek().equals("PRIMARY") && tokenMaker.peekNext().equals("KEY")) {
+			//System.out.println("Primary key test passed");
+			tokenMaker.check();
+			tokenMaker.check();
+		}
+		else if(tokenMaker.peek().equals("FOREIGN") && tokenMaker.peekNext().equals("KEY")){
+			tokenMaker.check();
+			tokenMaker.check();
+		}
+		else {
 			System.out.println("Invalid create command 6");
 		}
 	}
@@ -225,12 +229,12 @@ public class GrammarParser {//just checking synatx so far
 		try (FileWriter writer = new FileWriter(metaDataFile)) {
 		        writer.write(tableName+" , ");
 		        
-		        while(!tokens[tokenMaker.position].equals(")")) {
-		        	if(!tokens[tokenMaker.position].equals("(")) {
+		        while(!tokenMaker.match(";")) {
+		        	if(!(tokenMaker.match("(") || tokenMaker.match(")"))) {
 		        	   writer.write(tokenMaker.check()+" ");
 		        	}
 		        	else {
-		        		tokenMaker.check();
+		        		
 		        	}
 		        }
 		} catch (IOException e) {
@@ -471,10 +475,43 @@ public class GrammarParser {//just checking synatx so far
 
 
 
-position += 1;
+            position += 1;
 			return tokens[position-1];
 		}
-	
+		//turn raw input into token
+		private String[] tokenize(String input) {
+	        input = input.replace("(", " ( ")
+	                     .replace(")", " ) ")
+	                     .replace(",", " , ")
+	                     .replace(";", " ; ")
+	                     .replace("=", " = ");
+
+	        return input.trim().toUpperCase().split("\\s+");
+	    }
+		//looks at current token
+
+	    private String peek() {
+	        if (position >= tokens.length) return "EOF";
+	        return tokens[position];
+	    }
+	    
+	    private String peekNext() {
+	    	if (position >= tokens.length) return "EOF";
+	        return tokens[position+1];
+	    }
+	//returns current token and moves to next
+	    private String advance() {
+	        if (position >= tokens.length) return "EOF";
+	        return tokens[position++];
+	    }
+	//checks if current token equals what is expected
+	    private boolean match(String expected) {
+	        if (peek().equals(expected)) {
+	            advance();
+	            return true;
+	        }
+	        return false;
+	    }
 	}
 	
 	//inner database class
