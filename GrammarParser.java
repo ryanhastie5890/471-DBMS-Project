@@ -14,12 +14,53 @@ public class GrammarParser {//just checking synatx so far
 	
 	private TokenMaker tokenMaker;//utilization of inner class
 	private String[] tokens;//tokens from inner class
+	private int position;//for tracking index of current token
 	
+
+
 	
 	public GrammarParser(String text) {//constructor
 		tokenMaker = new TokenMaker(text);
 		tokens = tokenMaker.tokens;
+		this.position=0;
 	}
+
+//turn raw input into token
+	private String[] tokenize(String input) {
+        input = input.replace("(", " ( ")
+                     .replace(")", " ) ")
+                     .replace(",", " , ")
+                     .replace(";", " ; ")
+                     .replace("=", " = ");
+
+        return input.trim().toUpperCase().split("\\s+");
+    }
+	//looks at current token
+
+    private String peek() {
+        if (position >= tokens.length) return "EOF";
+        return tokens[position];
+    }
+//returns current token and moves to next
+    private String advance() {
+        if (position >= tokens.length) return "EOF";
+        return tokens[position++];
+    }
+//checks if current token equals what is expected
+    private boolean match(String expected) {
+        if (peek().equals(expected)) {
+            advance();
+            return true;
+        }
+        return false;
+    }
+//forces the token to match expected
+    private void expect(String expected) {
+        if (!peek().equals(expected)) {
+            throw new RuntimeException("Expected " + expected + " but found " + peek());
+        }
+        advance();
+    }
 	
 	public void beginParse() {//parses the initial input
 		String current = tokens[tokenMaker.position];
@@ -354,8 +395,7 @@ public class GrammarParser {//just checking synatx so far
 	}
 	//-------This is where new functions for the command should be added
 
-	
-	//Inner class that splits the original command, stores it, and increments through it.
+	/*//Inner class that splits the original command, stores it, and increments through it.
 	public class TokenMaker{
 		private String[] tokens;//stores all tokens
 		private int position;//keeps track of where in array it currently is
@@ -375,3 +415,4 @@ public class GrammarParser {//just checking synatx so far
 	
 
 }
+*/
