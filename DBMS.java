@@ -4,11 +4,12 @@
  * This file will hold the logic for the dbms
  */
 
+import java.io.IOException;
 import java.util.Scanner;
 
 public class DBMS {
 	
-	public static void main(String [] args) {
+	public static void main(String [] args) throws IOException {
 		Scanner scn = new Scanner(System.in);
 		
 		//BST test
@@ -23,7 +24,8 @@ public class DBMS {
 		System.out.println("Welcome to DBMS");
 		
 		
-		
+		GrammarParser parser = new GrammarParser();
+		Boolean done = false;
 		while(!done) {
 			System.out.println("Enter Command:");
 			
@@ -37,7 +39,13 @@ public class DBMS {
 				doneReading=false;
 			}
 			}
-			GrammarParser parser = new GrammarParser(command);
+			
+			if(command.contains("EXIT")) {
+				done = true;
+				System.out.println("Thank you for using this DBMS");
+				continue;
+			}
+			parser.setCommand(command); 
 			parser.beginParse();
 		}
 	}

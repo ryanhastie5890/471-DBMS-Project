@@ -12,6 +12,7 @@
 //tokens[tokenMaker.position] doesnt advance position. tokenMaker.check() does
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 
@@ -20,12 +21,13 @@ public class GrammarParser {//just checking synatx so far
 	private TokenMaker tokenMaker;//utilization of inner class
 	private String[] tokens;//tokens from inner class
 	
-	//data members to store tables
-	private ArrayList<File> metaDataFiles = new ArrayList<File>();
-	private ArrayList<File> recordFiles= new ArrayList<File>();
-	private ArrayList<File> indexFiles= new ArrayList<File>();
-	private ArrayList<BST> tableTrees= new ArrayList<BST>();
-	private ArrayList<String> tableNames= new ArrayList<String>();
+	//database storage
+	private ArrayList<DataBase> databases = new ArrayList<DataBase>();
+	private DataBase currentDB = null;
+	
+	public GrammarParser() {//empty constructor
+		
+	}
 	
 	public GrammarParser(String text) {//constructor
 		tokenMaker = new TokenMaker(text);
@@ -33,6 +35,10 @@ public class GrammarParser {//just checking synatx so far
 		
 	}
 	
+	public void setCommand(String command) {
+		tokenMaker = new TokenMaker(command);
+		tokens = tokenMaker.tokens;
+	}
 	public void beginParse() throws IOException {//parses the initial input
 		String current = tokens[tokenMaker.position];
 		
@@ -85,7 +91,10 @@ public class GrammarParser {//just checking synatx so far
 			
 			String token = tokenMaker.check();
 			if(token.equals("DATABASE")) {
-				System.out.println("Database test");
+				DataBase db = new DataBase(tokenMaker.check());
+				currentDB = db;
+				databases.add(db);
+				System.out.println("Database created");
 			}
 			else if(token.equals("TABLE")) {
 			    if(tokens[tokenMaker.position]!= "("){//check that table name wasnt skipped
@@ -93,24 +102,7 @@ public class GrammarParser {//just checking synatx so far
 				
 				String tableName = tokenMaker.check();
 				
-				//create tables and store in data members
-				File metaDataFile = new File(tableName+"MetaData.txt");
-
-				metaDataFiles.add(metaDataFile);
 				
-                File recordFile = new File(tableName+"Record.txt");
-				
-				recordFiles.add(recordFile);
-				
-                File indexFile = new File(tableName+"Index.txt");
-				
-				indexFiles.add(indexFile);
-				
-				BST tableTree = new BST();
-				
-				tableTrees.add(tableTree);
-				
-				tableNames.add(tableName);
 				
 				
 				if(!tokenMaker.check().equals("(")) {
@@ -118,6 +110,20 @@ public class GrammarParser {//just checking synatx so far
 				}
 				else {//begin parsing inside the parentheses
 					parseCreateList();
+					
+					if(!tokenMaker.check().equals(")"))
+					{
+						System.out.println("Missing ) character");
+					}else {
+						if(!tokenMaker.check().equals(";"))
+						{
+							System.out.println("Missing semicolon");
+						}
+						else {
+							System.out.println("Create command parsing done");
+							enactCreate();
+						}
+					}
 				}
 				
 			}
@@ -184,7 +190,57 @@ public class GrammarParser {//just checking synatx so far
 		}
 	}
 	
-	//insert currently doesnt read a command that spans multiple lines, only works for a single line command atm
+    public void enactCreate() {//actually does actions based on the valid create table command. havent done database yet
+    	tokenMaker.position = 2;//start at tablename
+    	
+    	String tableName = tokenMaker.check();
+    	tokenMaker.check();//burn (
+    	
+    	//create tables and store in data members
+		
+		//meta data
+		File metaDataFile = new File(tableName+"MetaData.txt");
+		currentDB.metaDataFiles.add(metaDataFile);
+		
+		//record data
+        File recordFile = new File(tableName+"Record.txt");
+		currentDB.recordFiles.add(recordFile);
+		
+		//index
+        File indexFile = new File(tableName+"Index.txt");
+		currentDB.indexFiles.add(indexFile);
+		
+		//bst
+		BST tableTree = new BST();
+		currentDB.tableTrees.add(tableTree);
+		
+		//tablename
+		currentDB.tableNames.add(tableName);
+		
+		//start writing to files. this part will probably need to be tweaked depending on how we actually use the files
+		
+		//write attributes to metaData File
+		//file should start with table name then contain all attributes and their types
+		
+		try (FileWriter writer = new FileWriter(metaDataFile)) {
+		        writer.write(tableName+" , ");
+		        
+		        while(!tokens[tokenMaker.position].equals(")")) {
+		        	if(!tokens[tokenMaker.position].equals("(")) {
+		        	   writer.write(tokenMaker.check()+" ");
+		        	}
+		        	else {
+		        		tokenMaker.check();
+		        	}
+		        }
+		} catch (IOException e) {
+		        e.printStackTrace();
+		}
+		
+		System.out.println("Table created");
+    }
+	
+	//inserts
 	public void insert() {//prototype insert command read
 		if(!tokenMaker.check().equals("INSERT")) {//checks if it is create table
 			System.out.println("Invalid insert command 1");
@@ -419,6 +475,21 @@ position += 1;
 			return tokens[position-1];
 		}
 	
+	}
+	
+	//inner database class
+	public class DataBase{
+		String name;
+		//data members to store tables
+		private ArrayList<File> metaDataFiles = new ArrayList<File>();
+		private ArrayList<File> recordFiles= new ArrayList<File>();
+		private ArrayList<File> indexFiles= new ArrayList<File>();
+		private ArrayList<BST> tableTrees= new ArrayList<BST>();
+		private ArrayList<String> tableNames= new ArrayList<String>();
+		
+		public DataBase(String name) {
+			this.name = name;
+		}
 	}
 	
 
