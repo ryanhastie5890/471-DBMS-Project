@@ -5,11 +5,14 @@
  */
 
 import java.io.IOException;
+
+
 import java.util.Scanner;
+
 
 public class DBMS {
 	
-	public static void main(String [] args) throws IOException {
+	public static void main(String [] args) throws IOException, GrammarParser.InvalidCommandException {
 		Scanner scn = new Scanner(System.in);
 		
 		//BST test
@@ -46,7 +49,12 @@ public class DBMS {
 				continue;
 			}
 			parser.setCommand(command); 
+			try {
 			parser.beginParse();
+			}
+			catch (GrammarParser.InvalidCommandException e){
+				System.out.println("Command Failed, error message: "+e.getMessage());
+			}
 		}
 	}
 
