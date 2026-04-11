@@ -11,10 +11,23 @@
 //rn just checking for syntax. eventually need it to start actually doing the commands
 //tokens[tokenMaker.position] doesnt advance position. tokenMaker.check() does
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
+
+
+
+// if in database1 there is a table table1, then a table table1 in database2 would have the same files and would get mixed up.
+//it also overwrited the original file
+//to solve this  file names are now as follows
+// (tableName)MetaData-(databaseName).txt for meta data
+//(tableName)Record-(databaseName).txt for records
+//(tableName)Index-(databaseName).txt for indexes
+//(databaseName)-DB.txt for database files
 
 public class GrammarParser {
 
@@ -24,14 +37,16 @@ public class GrammarParser {
 	// database storage
 	private ArrayList<DataBase> databases = new ArrayList<DataBase>();
 	private DataBase currentDB = null;
+	private File currentDBFile = null;
 
-	public GrammarParser() {// empty constructor
-
+	public GrammarParser() throws IOException {// empty constructor
+        init();
 	}
 
-	public GrammarParser(String text) {// constructor
+	public GrammarParser(String text) throws IOException {// constructor
 		tokenMaker = new TokenMaker(text);
 		tokens = tokenMaker.tokens;
+		init();
 
 	}
 
@@ -40,35 +55,102 @@ public class GrammarParser {
 		tokens = tokenMaker.tokens;
 	}
 	
-	//this is initialization that pulls all databases and files
-	public void init() {
+	public void init() throws IOException {
+		currentDB = null;
 		
+		//----read all databases, create database, add files
+		readDatabaseFiles();
+
 	}
 
+	public void readDatabaseFiles() throws IOException {//----read all databases, create database, add files
+		File root = new File(".");//should point to root directory
+		
+		File[] files = root.listFiles((directory,name)->//lambda to find files
+		   name.endsWith("-DB.txt")
+	     );
+		
+		if(files != null) {
+			for(File file : files) {
+				//reader
+				BufferedReader reader = new BufferedReader(new FileReader(file));
+				
+				String currentLine;
+				//create database
+				
+				if((currentLine = reader.readLine())!=null) {//make sure file not empty
+					//currentLine is now db name
+					DataBase db = new DataBase(currentLine);
+					this.databases.add(db);
+					
+					//read table names in the file
+					while((currentLine =reader.readLine()) != null) {
+						db.tableNames.add(currentLine);
+					}
+					
+					//start adding table files for database
+					getTableFiles(db);
+				}
+
+			}
+		}
+	}
+	
+	public void getTableFiles(DataBase db) throws IOException {
+		//database should have all table names, now find all its table's files
+		
+		
+		File root = new File(".");//root
+		
+		File [] files = root.listFiles();//get all files
+		
+		for(int i = 0; i < db.tableNames.size(); i++) {//for each table
+		
+		  String tableName = db.tableNames.get(i);
+			
+		  if(files != null) {//search
+			for(File file : files) {
+				if(file.getName().equals(tableName+"MetaData-"+db.name+".txt")) {//meta data file found
+						   db.metaDataFiles.add(file);	
+				}
+				if(file.getName().equals(tableName+"Records-"+db.name+".txt")) {//record file found
+				
+						   db.recordFiles.add(file);	
+				}
+				if(file.getName().equals(tableName+"Index-"+db.name+".txt")) {//index file found
+					
+						   db.indexFiles.add(file);	
+					
+				}
+			}
+		}
+		}
+	}
+	
 	public void beginParse() throws IOException, GrammarParser.InvalidCommandException {// parses the initial input
 		String current = tokens[tokenMaker.position];
 
 		// add an else if for each command and then call a function that parses the
 		// relevant command
-		if (current.equals("CREATE")) {
+		if (current.equalsIgnoreCase("CREATE")) {
 			create();
-		} else if (current.equals("INSERT")) {
+		} else if (current.equalsIgnoreCase("INSERT")) {
 			insert();
-		} else if (current.equals("DESCRIBE")) {
+		} else if (current.equalsIgnoreCase("DESCRIBE")) {
 			describe();
-		} else if (current.equals("RENAME")) {
+		} else if (current.equalsIgnoreCase("RENAME")) {
 			rename();
-		} else if (current.equals("UPDATE")) {
+		} else if (current.equalsIgnoreCase("UPDATE")) {
 			update();
-		} else if (current.equals("SELECT")) {
+		} else if (current.equalsIgnoreCase("SELECT")) {
 			select();
-		} else if (current.equals("LET")) {
+		} else if (current.equalsIgnoreCase("LET")) {
 			let();
-		} else if (current.equals("DELETE")) {
+		} else if (current.equalsIgnoreCase("DELETE")) {
 			delete();
-		} else if (current.equals("INPUT")) {
+		} else if (current.equalsIgnoreCase("INPUT")) {
 			input();
-		} else if (current.equals("USE")) {
+		} else if (current.equalsIgnoreCase("USE")) {
 			use();
 		} else {
 			throw new InvalidCommandException("Invalid command detected");
@@ -81,17 +163,40 @@ public class GrammarParser {
 		if (!tokenMaker.match("CREATE")) {// checks if it is create table
 			throw new InvalidCommandException("CREATE missing or incorrect");
 		} else {
-			if (!(tokenMaker.peek().equals("TABLE") || tokenMaker.peek().equals("DATABASE"))) {
+			if (!(tokenMaker.peek().equalsIgnoreCase("TABLE") || tokenMaker.peek().equalsIgnoreCase("DATABASE"))) {
 				throw new InvalidCommandException("TABLE or DATABASE not found or incorrect");
 			} else {
 
 				String token = tokenMaker.check();
-				if (token.equals("DATABASE")) {
-					DataBase db = new DataBase(tokenMaker.check());
-					//currentDB = db; need to use USE now
-					databases.add(db);
-					System.out.println("Database created");
-				} else if (token.equals("TABLE")) {
+				if (token.equalsIgnoreCase("DATABASE")) {
+					String databaseName = tokenMaker.check();
+					if(tokenMaker.match(";")) {
+						//enacting db command
+						DataBase db = new DataBase(databaseName);
+						//currentDB = db; need to use USE now
+						databases.add(db);
+						
+						//start creating file for database that is titled dbname-DB.txt and contains the names of tables that are under the db
+						//this is for initialization to save dbs and tables between sessions
+						
+						File databaseFile = new File(databaseName + "-DB.txt");
+						//write db name as first line of file
+						FileWriter dbWrite = new FileWriter(databaseFile,true);
+						PrintWriter printer = new PrintWriter(dbWrite);//using to do names on new lines, may not be necessary
+						
+						printer.println(databaseName);
+						printer.close();
+						
+						System.out.println("Database created");
+						
+					}
+					else {
+						throw new InvalidCommandException("Semicolon missing or incorrect");
+					}
+					
+					
+					
+				} else if (token.equalsIgnoreCase("TABLE")) {
 					if (!tokenMaker.match("(")) {// check that table name wasnt skipped
 
 						String tableName = tokenMaker.check();
@@ -101,7 +206,7 @@ public class GrammarParser {
 						ArrayList<String> tables = this.currentDB.tableNames;
 						for(int i = 0; i < tables.size(); i ++) {
 							String checkName = tables.get(i);
-							if (checkName.equals(tableName)) {
+							if (checkName.equalsIgnoreCase(tableName)) {
 								found = true;
 								throw new InvalidCommandException("Table already exists");
 							}
@@ -119,7 +224,7 @@ public class GrammarParser {
 								if (!tokenMaker.match(";")) {
 									throw new InvalidCommandException("Semicolon missing or incorrect");
 								} else {
-									System.out.println("Create command parsing done");
+									//System.out.println("Create command parsing done");
 									enactCreate();
 								}
 							}
@@ -151,7 +256,7 @@ public class GrammarParser {
 
 		parseCreateType();// type
 
-		if (tokenMaker.peek().equals("PRIMARY") || tokenMaker.peek().equals("FOREIGN")) {
+		if (tokenMaker.peek().equalsIgnoreCase("PRIMARY") || tokenMaker.peek().equalsIgnoreCase("FOREIGN")) {
 			parseCreateConstraint();// primary key stuff, add foreign key stuff later
 		}
 	}
@@ -179,11 +284,11 @@ public class GrammarParser {
 	public void parseCreateConstraint() throws GrammarParser.InvalidCommandException {
 		// System.out.println(tokens[tokenMaker.position] +" and
 		// "+tokens[tokenMaker.position +1]);
-		if (tokenMaker.peek().equals("PRIMARY") && tokenMaker.peekNext().equals("KEY")) {
+		if (tokenMaker.peek().equalsIgnoreCase("PRIMARY") && tokenMaker.peekNext().equalsIgnoreCase("KEY")) {
 			// System.out.println("Primary key test passed");
 			tokenMaker.check();
 			tokenMaker.check();
-		} else if (tokenMaker.peek().equals("FOREIGN") && tokenMaker.peekNext().equals("KEY")) {
+		} else if (tokenMaker.peek().equalsIgnoreCase("FOREIGN") && tokenMaker.peekNext().equalsIgnoreCase("KEY")) {
 			tokenMaker.check();
 			tokenMaker.check();
 		} else {
@@ -191,7 +296,7 @@ public class GrammarParser {
 		}
 	}
 
-	public void enactCreate() {// actually does actions based on the valid create table command. havent done
+	public void enactCreate() throws IOException {// actually does actions based on the valid create table command. havent done
 								// database yet
 		tokenMaker.position = 2;// start at tablename
 
@@ -201,15 +306,15 @@ public class GrammarParser {
 		// create tables and store in data members
 
 		// meta data
-		File metaDataFile = new File(tableName + "MetaData.txt");
+		File metaDataFile = new File(tableName + "MetaData-"+currentDB.name+".txt");
 		currentDB.metaDataFiles.add(metaDataFile);
 
 		// record data
-		File recordFile = new File(tableName + "Record.txt");
+		File recordFile = new File(tableName + "Record-"+currentDB.name+".txt");
 		currentDB.recordFiles.add(recordFile);
 
 		// index
-		File indexFile = new File(tableName + "Index.txt");
+		File indexFile = new File(tableName + "Index-"+currentDB.name+".txt");
 		currentDB.indexFiles.add(indexFile);
 
 		// bst
@@ -224,21 +329,38 @@ public class GrammarParser {
 
 		// write attributes to metaData File
 		// file should start with table name then contain all attributes and their types
+		
+		FileWriter writer = new FileWriter(metaDataFile);
+		PrintWriter printer = new PrintWriter(writer);//using to do names on new lines, may not be necessary
+		printer.println(tableName);
 
-		try (FileWriter writer = new FileWriter(metaDataFile)) {
-			writer.write(tableName + " , ");
-
-			while (!tokenMaker.match(";")) {
-				if (!(tokenMaker.match("(") || tokenMaker.match(")"))) {
-					writer.write(tokenMaker.check() + " ");
-				} else {
-
+		//loop makes metadata file for command create table tableName (id int, name varchar(10)); look like
+		//tablename
+		//id int
+		//name varchar 10
+			while (!tokenMaker.peek().equals(";")) {
+				while(!tokenMaker.match(",") && !tokenMaker.peek().equals(";")) {
+				  if (!(tokenMaker.match("(") || tokenMaker.match(")"))) {
+					  printer.print(tokenMaker.check() + " ");
+				  } else {
+                   
+				  }
 				}
+				
+				printer.println();
 			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		printer.close();
+		
+		//need to write to database file which tables belong to each database so when creating table, am writing to currentDb's file
+		//the table name. append it
 
+		
+		FileWriter dbWrite = new FileWriter((currentDB.name+"-DB.txt"),true);
+		printer = new PrintWriter(dbWrite);//using to do names on new lines, may not be necessary
+		
+		printer.println(tableName);
+		printer.close();
+		
 		System.out.println("Table created");
 	}
 
@@ -268,17 +390,17 @@ public class GrammarParser {
 	}
 	// inserts
 	public void insert() {// prototype insert command read
-		if (!tokenMaker.check().equals("INSERT")) {// checks if it is create table
+		if (!tokenMaker.check().equalsIgnoreCase("INSERT")) {// checks if it is create table
 			System.out.println("Invalid insert command 1");
 		} else {
 			String name = tokenMaker.check();
 
-			if (!tokenMaker.check().equals("VALUES")) {// check that table name wasnt skipped
+			if (!tokenMaker.check().equalsIgnoreCase("VALUES")) {// check that table name wasnt skipped
 
 				System.out.println("Invalid insert command 2");
 
 			} else {
-				if (!tokenMaker.check().equals("(")) {
+				if (!tokenMaker.check().equalsIgnoreCase("(")) {
 					System.out.println("Invalid insert command 3");
 				} else {
 					parseInsertList();
@@ -291,7 +413,7 @@ public class GrammarParser {
 		int i = 1;
 		parseInsertValues(i);// start parsing first attribute
 
-		while (tokens[tokenMaker.position].equals(",")) {// hopefully takes each attribute and begins parsing it
+		while (tokens[tokenMaker.position].equalsIgnoreCase(",")) {// hopefully takes each attribute and begins parsing it
 			tokenMaker.check();// advance past comma
 			parseInsertValues(++i);// continue parsing attributes
 		}
@@ -303,12 +425,12 @@ public class GrammarParser {
 	}
 
 	// beginning of describe command
-	public void describe() {
-		if (!tokenMaker.check().equals("DESCRIBE") || !tokenMaker.check().equals("(")) {
+	public void describe() throws IOException {
+		if (!tokenMaker.check().equalsIgnoreCase("DESCRIBE") || !tokenMaker.check().equals("(")) {
 			System.out.println("Invalid describe command 1");
 		} else {
 			String command = tokenMaker.check();
-			if (command.equals("ALL")) {
+			if (command.equalsIgnoreCase("ALL")) {
 				describeAll();
 			} else {
 				describeTable(command);
@@ -316,12 +438,34 @@ public class GrammarParser {
 		}
 	}
 
-	public void describeAll() {
-		System.out.println("describe all test passed");
+	public void describeAll() throws IOException {
+		//System.out.println("describe all test passed");
+		
+        for(int i = 0; i < currentDB.metaDataFiles.size(); i++) {
+        	File file = currentDB.metaDataFiles.get(i);
+        	
+        	BufferedReader reader = new BufferedReader(new FileReader(file));
+    	    String currentLine;
+    	    
+    	    while((currentLine = reader.readLine())!=null) {//prints out whole meta data file for table
+    	    	System.out.println(currentLine);
+    	    }
+    	    reader.close();
+    	    System.out.println();
+        }
 	}
 
-	public void describeTable(String tableName) {
-		System.out.println("describe table test passed table: " + tableName);
+	public void describeTable(String tableName) throws IOException {
+		//System.out.println("describe table test passed table: " + tableName);
+	    File file = new File(tableName+"MetaData-"+currentDB.name+".txt");
+	
+	    BufferedReader reader = new BufferedReader(new FileReader(file));
+	    String currentLine;
+	    
+	    while((currentLine = reader.readLine())!=null) {//prints out whole meta data file for table
+	    	System.out.println(currentLine);
+	    }
+	    reader.close();
 	}
 
 	// beginning of rename command
@@ -356,7 +500,7 @@ public class GrammarParser {
 		tokenMaker.check();// burn UPDATE
 		String tableName = tokenMaker.check();
 
-		if (!tokenMaker.check().equals("SET")) {
+		if (!tokenMaker.check().equalsIgnoreCase("SET")) {
 			System.out.println("Invalid update command 1");
 		} else {
 			parseUpdateList();
@@ -391,12 +535,12 @@ public class GrammarParser {
 
 	// select
 	public void select() {
-		if (!tokenMaker.check().equals("SELECT")) {
+		if (!tokenMaker.check().equalsIgnoreCase("SELECT")) {
 			System.out.println("Invalid select command 1");
 		} else {
 			selectNameList();
 
-			if (!tokenMaker.check().equals("FROM")) {
+			if (!tokenMaker.check().equalsIgnoreCase("FROM")) {
 				System.out.println("Invalid select command 2");
 			} else {
 				selectTablesList();
@@ -441,12 +585,12 @@ public class GrammarParser {
 	// commands below this line are not as developed as the commands above yet
 	// let
 	public void let() {
-		if (!tokenMaker.check().equals("LET")) {
+		if (!tokenMaker.check().equalsIgnoreCase("LET")) {
 			System.out.println("Invalid let command 1");
 		} else {
 			String tableName = tokenMaker.check();
 
-			if (!tokenMaker.check().equals("KEY")) {
+			if (!tokenMaker.check().equalsIgnoreCase("KEY")) {
 				System.out.println("Invalid let command 2");
 			} else {
 				String attributeName = tokenMaker.check();
@@ -486,19 +630,8 @@ public class GrammarParser {
 		private int position;// keeps track of where in array it currently is
 
 		public TokenMaker(String text) {// constructor
-			tokens = text.replace("(", " ( ").replace(")", " ) ").replace(",", " , ").replace("=", " = ").split("\\s+"); // add
-																															// white
-																															// spaces
-																															// to
-																															// (
-																															// )
-																															// and
-																															// ,
-																															// then
-																															// split
-																															// at
-																															// white
-																															// space
+			tokens = text.replace("(", " ( ").replace(")", " ) ").replace(",", " , ").replace(";", " ; ").replace("=", " = ").split("\\s+"); 
+			
 			position = 0;
 		}
 
@@ -539,7 +672,7 @@ public class GrammarParser {
 
 		// checks if current token equals what is expected
 		private boolean match(String expected) {
-			if (peek().equals(expected)) {
+			if (peek().equalsIgnoreCase(expected)) {
 				advance();
 				return true;
 			}

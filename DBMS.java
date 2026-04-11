@@ -43,7 +43,8 @@ public class DBMS {
 			}
 			}
 			
-			if(command.contains("EXIT")) {
+			String upper = command.toUpperCase();
+			if(upper.contains("EXIT")) {
 				done = true;
 				System.out.println("Thank you for using this DBMS");
 				continue;
