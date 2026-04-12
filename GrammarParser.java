@@ -12,6 +12,7 @@
 //tokens[tokenMaker.position] doesnt advance position. tokenMaker.check() does
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -296,11 +297,14 @@ public class GrammarParser {
 		}
 	}
 
-	public void enactCreate() throws IOException {// actually does actions based on the valid create table command. havent done
+	public void enactCreate() throws IOException, GrammarParser.InvalidCommandException {// actually does actions based on the valid create table command. havent done
 								// database yet
 		tokenMaker.position = 2;// start at tablename
 
 		String tableName = tokenMaker.check();
+		if(currentDB.tableNames.contains(tableName)) {
+			throw new InvalidCommandException("Table already exists in database");
+		}
 		tokenMaker.check();// burn (
 
 		// create tables and store in data members
@@ -425,15 +429,36 @@ public class GrammarParser {
 	}
 
 	// beginning of describe command
-	public void describe() throws IOException {
+	public void describe() throws IOException, GrammarParser.InvalidCommandException {
 		if (!tokenMaker.check().equalsIgnoreCase("DESCRIBE") || !tokenMaker.check().equals("(")) {
 			System.out.println("Invalid describe command 1");
 		} else {
 			String command = tokenMaker.check();
 			if (command.equalsIgnoreCase("ALL")) {
-				describeAll();
+				if(tokenMaker.match(")")) {
+				 if(tokenMaker.match(";")) {
+				    describeAll();
+				 }
+				 else {
+					 throw new InvalidCommandException("Missing or incorrect ;");
+				 }
+				}
+				else {
+					throw new InvalidCommandException("Missing or incorrect )");
+				}
 			} else {
-				describeTable(command);
+				if(tokenMaker.match(")")) {
+					 if(tokenMaker.match(";")) {
+						 describeTable(command);
+					 }
+					 else {
+						 throw new InvalidCommandException("Missing or incorrect ;");
+					 }
+					}
+					else {
+						throw new InvalidCommandException("Missing or incorrect )");
+					}
+				
 			}
 		}
 	}
@@ -469,18 +494,22 @@ public class GrammarParser {
 	}
 
 	// beginning of rename command
-	public void rename() {
+	public void rename() throws GrammarParser.InvalidCommandException, IOException {
 		tokenMaker.check();// burn a token
 		String tableName = tokenMaker.check();
+		
+		if(!currentDB.tableNames.contains(tableName)) {
+			throw new InvalidCommandException("Could not find table");
+		}
 
 		if (!tokenMaker.check().equals("(")) {
-			System.out.println("Invalid rename command 1");
+			throw new InvalidCommandException("Missing or incorrect (");
 		} else {
-			renameList();
+			renameList(tableName);
 		}
 	}
 
-	public void renameList() {
+	public void renameList(String tableName) throws GrammarParser.InvalidCommandException, IOException {
 		int i = 1;
 		parseRenameAttributes(i);// start parsing first attribute
 
@@ -488,11 +517,91 @@ public class GrammarParser {
 			tokenMaker.check();// advance past comma
 			parseRenameAttributes(++i);// continue parsing attributes
 		}
+		
+		//check for ) and ;
+		if(!tokenMaker.match(")")) {
+			throw new InvalidCommandException("Missing or incorrect )");
+		}
+		if(!tokenMaker.match(";")) {
+			throw new InvalidCommandException("Missing or incorrect ;");
+		}
+		
+		//make sure number of attributes is correct
+		int numAttributes = -1;//-1 so table name wont count
+		
+		//find meta data file 
+		File file = new File(tableName+"MetaData-"+currentDB.name+".txt");
+		
+		if(file.exists()) {
+			//count attributes
+			BufferedReader reader = new BufferedReader(new FileReader(file));
+			String currentLine;
+			while((currentLine=reader.readLine())!=null) {
+				numAttributes++;
+			}
+			reader.close();
+		}else {
+			throw new InvalidCommandException("Could not find table");
+		}
+		
+		if(numAttributes!=i) {
+			throw new InvalidCommandException("Incorrect number of attributes");
+		}
+		
+		//command should be fine now, carry out command
+		enactRename(file);
+		
+	}
+	
+	//carries out the rename command
+	public void enactRename(File file) throws IOException {
+	    tokenMaker.position=0;//reset command
+	    //burn uneeded part of command
+	    tokenMaker.check();
+	    tokenMaker.check();
+	    tokenMaker.check();
+	    
+	    //need to go through file starting on line two and change the first word as that is the name
+	    BufferedReader reader = new BufferedReader(new FileReader(file));
+	    
+	    ArrayList<String> lines = new ArrayList<String>();//store read lines
+	    
+	    String currentLine;
+	    int lineNumber = 1;
+	    
+	    while((currentLine = reader.readLine())!=null) {
+	    	
+	    	if(lineNumber >= 2) {//not table line so split
+	    		String[] words = currentLine.split("\\s+");
+	    		
+	    		if(words.length > 0) {
+	    			words[0] = tokenMaker.check();//replace the name
+	    			
+	    			tokenMaker.check();//burn comma
+	    		}
+	    		
+	    		currentLine = String.join(" ", words);//join back
+	    	}
+	    	lines.add(currentLine);
+	    	lineNumber++;//next line
+	    }
+	    
+	    reader.close();
+	    
+	    //write lines back
+	    BufferedWriter writer = new BufferedWriter(new FileWriter(file));
+	    
+	    for(String line : lines) {
+	    	writer.write(line);
+	    	writer.newLine();
+	    }
+	    
+	    writer.close();
 	}
 
 	public void parseRenameAttributes(int attributeNumber) {
 		// test statement
-		System.out.println("Attribute " + attributeNumber + ": " + tokenMaker.check());
+		//System.out.println("Attribute " + attributeNumber + ": " + tokenMaker.check());
 	}
 
 	// begin update methods
