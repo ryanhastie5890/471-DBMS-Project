@@ -11,7 +11,7 @@
 User enters the query => the grammar parsers you guyz wrote will validate it => have your parser extract necessary info from it => call methods from the parser.java to populate respective fields in the parsedQuery object and to start the manipualtion process. After creation of the object, the parser.java class itself calls various respective methods to get the thing done (mainly talking to storageManager and bstindex)
 
 
-![Architecture Diagram](diagram.svg)
+![Architecture Diagram](diagram.png)
 
 
 
