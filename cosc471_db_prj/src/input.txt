@@ -1,9 +1,0 @@
-create database db1;
-create database db2;
-use db1;
-create table table1 
-(id INT PRIMARY KEY, name TEXT, gpa FLOAT);
-describe (table1);
-rename table1 (studentId, name, gradePointAverage);
-describe (table1);
-exit;
