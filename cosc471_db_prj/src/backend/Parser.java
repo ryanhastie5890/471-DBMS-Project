@@ -50,13 +50,17 @@ public class Parser {
         queue.add(insertInto("student", new String[]{"2", "Jane Smith", "3.9"}));
         queue.add(insertInto("course",  new String[]{"Math101", "3"}));
         
-        queue.add(select("student", new String[]{"name"}, null, null, null));
-        queue.add(select("student", new String[]{"name", "gpa"}, "id", "=", "1"));
-        queue.add(select("course",  new String[]{"*"}, null, null, null));
+        queue.add(select("student", new String[]{"name"}, null, null, null,
+                null, null, null, null));
+        queue.add(select("student", new String[]{"name", "gpa"}, "id", "=", "1",
+                null, null, null, null));
+        queue.add(select("course",  new String[]{"*"}, null, null, null,
+                null, null, null, null));
         
         queue.add(update("student", new String[]{"gpa"}, new String[]{"4.0"}, "id", "=", "1"));
         queue.add(update("student", new String[]{"name", "gpa"}, new String[]{"\"ishaq ahmed\"", "1.1"}, "name", "=", "\"Jane Smith\""));
-        queue.add(select("student", new String[]{"*"}, null, null, null));
+        queue.add(select("student", new String[]{"*"}, null, null, null,
+                null, null, null, null));
         
         queue.add(delete("student", "id", "=", "2"));
         queue.add(delete("course", null, null, null));  // no WHERE — deletes all and removes schema
@@ -112,7 +116,8 @@ public class Parser {
     }
 
     public static ParsedQuery select(String tableName, String[] cols,
-                                     String whereLeft, String whereOp, String whereRight) {
+        String whereLeft, String whereOp, String whereRight,
+        String whereConnector, String whereLeft2, String whereOp2, String whereRight2) {
         ParsedQuery q     = new ParsedQuery();
         q.queryType       = "SELECT";
         q.fromTables      = new ArrayList<>(Arrays.asList(tableName));
@@ -120,6 +125,10 @@ public class Parser {
         q.whereLeft       = whereLeft;
         q.whereOp         = whereOp;
         q.whereRight      = whereRight;
+        q.whereConnector  = whereConnector;
+        q.whereLeft2      = whereLeft2;
+        q.whereOp2        = whereOp2;
+        q.whereRight2     = whereRight2;
         return q;
     }
     

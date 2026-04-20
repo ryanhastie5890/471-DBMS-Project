@@ -519,56 +519,142 @@ public class GrammarParser {
 
 	// begin update methods
 	public void update() {
-		tokenMaker.check();// burn UPDATE
-		String tableName = tokenMaker.check();
+		try {
+			tokenMaker.check();// burn UPDATE
+			String tableName = tokenMaker.check();
 
-		if (!tokenMaker.check().equalsIgnoreCase("SET")) {
-			System.out.println("Invalid update command 1");
-		} else {
-			parseUpdateList();
+			if (!tokenMaker.check().equalsIgnoreCase("SET")) {
+				throw new InvalidCommandException("Invalid update command 1");
+			} else {
+				ArrayList<String> setColumns = new ArrayList<String>();
+				ArrayList<String> setValues = new ArrayList<String>();
 
-			// start parsing where statement
+				parseUpdateList(setColumns, setValues);
+
+				String whereLeft = null;
+				String whereOp = null;
+				String whereRight = null;
+
+				if (tokenMaker.peek().equalsIgnoreCase("WHERE")) {
+					tokenMaker.check();// burn WHERE
+
+					whereLeft = tokenMaker.check();
+					whereOp = tokenMaker.check();
+
+					if (!(whereOp.equals("=") || whereOp.equals("!=") || whereOp.equals("<")
+							|| whereOp.equals(">") || whereOp.equals("<=") || whereOp.equals(">="))) {
+						throw new InvalidCommandException("Invalid relational operator");
+					}
+
+					whereRight = tokenMaker.check();
+				}
+
+				if (!tokenMaker.match(";")) {
+					throw new InvalidCommandException("Missing or incorrect ;");
+				}
+
+				String[] setColumnsArray = setColumns.toArray(new String[0]);
+				String[] setValuesArray = setValues.toArray(new String[0]);
+
+				executor.execute(parser.update(tableName, setColumnsArray, setValuesArray, whereLeft, whereOp, whereRight));
+			}
+		} catch (Exception e) {
+			System.out.println(e.getMessage());
 		}
 	}
 
-	public void parseUpdateList() {
-		int i = 1;
-		parseUpdateValues(i);// start parsing first attribute
+	public void parseUpdateList(ArrayList<String> setColumns, ArrayList<String> setValues) throws InvalidCommandException {
+		parseUpdateValues(setColumns, setValues);// start parsing first attribute
 
 		while (tokenMaker.position < tokens.length && tokens[tokenMaker.position].equals(",")) {// hopefully takes each
 																								// attribute and begins
 																								// parsing it
 			tokenMaker.check();// advance past comma
-			parseUpdateValues(++i);// continue parsing attributes
+			parseUpdateValues(setColumns, setValues);// continue parsing attributes
 		}
 	}
 
-	public void parseUpdateValues(int attributeNumber) {
+	public void parseUpdateValues(ArrayList<String> setColumns, ArrayList<String> setValues) throws InvalidCommandException {
 		String name = tokenMaker.check();
 
 		if (!tokenMaker.check().equals("=")) {
-			System.out.println("Invalid update command 2");
+			throw new InvalidCommandException("Invalid update command 2");
 		}
 
 		String value = tokenMaker.check();
 
-		System.out.println("Received constant " + attributeNumber + ": " + name + " " + value);
+		setColumns.add(name);
+		setValues.add(value);
 	}
 
-	// select
+		// select
 	public void select() {
-		if (!tokenMaker.check().equalsIgnoreCase("SELECT")) {
-			System.out.println("Invalid select command 1");
-		} else {
-			selectNameList();
-
-			if (!tokenMaker.check().equalsIgnoreCase("FROM")) {
-				System.out.println("Invalid select command 2");
+		try {
+			if (!tokenMaker.check().equalsIgnoreCase("SELECT")) {
+				throw new InvalidCommandException("Invalid select command 1");
 			} else {
-				selectTablesList();
+				ArrayList<String> selectedColumns = new ArrayList<String>();
+				selectedColumns.add(tokenMaker.check());
 
-				// start where portion
+				while (tokenMaker.peek().equals(",")) {
+					tokenMaker.check();// burn comma
+					selectedColumns.add(tokenMaker.check());
+				}
+
+				if (!tokenMaker.check().equalsIgnoreCase("FROM")) {
+					throw new InvalidCommandException("Invalid select command 2");
+				} else {
+					String tableName = tokenMaker.check();
+
+					String whereLeft = null;
+					String whereOp = null;
+					String whereRight = null;
+
+					String whereConnector = null;
+					String whereLeft2 = null;
+					String whereOp2 = null;
+					String whereRight2 = null;
+
+					if (tokenMaker.peek().equalsIgnoreCase("WHERE")) {
+						tokenMaker.check();// burn WHERE
+
+						whereLeft = tokenMaker.check();
+						whereOp = tokenMaker.check();
+
+						if (!(whereOp.equals("=") || whereOp.equals("!=") || whereOp.equals("<")
+								|| whereOp.equals(">") || whereOp.equals("<=") || whereOp.equals(">="))) {
+							throw new InvalidCommandException("Invalid relational operator");
+						}
+
+						whereRight = tokenMaker.check();
+
+						if (tokenMaker.peek().equalsIgnoreCase("AND") || tokenMaker.peek().equalsIgnoreCase("OR")) {
+							whereConnector = tokenMaker.check();
+
+							whereLeft2 = tokenMaker.check();
+							whereOp2 = tokenMaker.check();
+
+							if (!(whereOp2.equals("=") || whereOp2.equals("!=") || whereOp2.equals("<")
+									|| whereOp2.equals(">") || whereOp2.equals("<=") || whereOp2.equals(">="))) {
+								throw new InvalidCommandException("Invalid relational operator");
+							}
+
+							whereRight2 = tokenMaker.check();
+						}
+					}
+
+					if (!tokenMaker.match(";")) {
+						throw new InvalidCommandException("Missing or incorrect ;");
+					}
+
+					String[] columnsArray = selectedColumns.toArray(new String[0]);
+
+					executor.execute(parser.select(tableName, columnsArray, whereLeft, whereOp, whereRight,
+							whereConnector, whereLeft2, whereOp2, whereRight2));
+				}
 			}
+		} catch (Exception e) {
+			System.out.println(e.getMessage());
 		}
 	}
 
@@ -625,15 +711,37 @@ public class GrammarParser {
 
 	// delete
 	public void delete() {
-		tokenMaker.check();// dont need the first if in some of the other commands since it checks in the
-							// other method
+		try {
+			tokenMaker.check();// burn DELETE
+			String tableName = tokenMaker.check();
 
-		String tableName = tokenMaker.check();
+			String whereLeft = null;
+			String whereOp = null;
+			String whereRight = null;
 
-		System.out.println("delete test passed");
-		// where part
+			if (tokenMaker.peek().equalsIgnoreCase("WHERE")) {
+				tokenMaker.check();// burn WHERE
+
+				whereLeft = tokenMaker.check();
+				whereOp = tokenMaker.check();
+
+				if (!(whereOp.equals("=") || whereOp.equals("!=") || whereOp.equals("<")
+						|| whereOp.equals(">") || whereOp.equals("<=") || whereOp.equals(">="))) {
+					throw new InvalidCommandException("Invalid relational operator");
+				}
+
+				whereRight = tokenMaker.check();
+			}
+
+			if (!tokenMaker.match(";")) {
+				throw new InvalidCommandException("Missing or incorrect ;");
+			}
+
+			executor.execute(parser.delete(tableName, whereLeft, whereOp, whereRight));
+		} catch (Exception e) {
+			System.out.println(e.getMessage());
+		}
 	}
-
 	// input
 	public void input() throws IOException, InvalidCommandException {
 		tokenMaker.check();
@@ -738,8 +846,24 @@ public void runFileOutput(String fileName, String fileNameOutput) throws IOExcep
 		private int position;// keeps track of where in array it currently is
 
 		public TokenMaker(String text) {// constructor
-			tokens = text.replace("(", " ( ").replace(")", " ) ").replace(",", " , ").replace(";", " ; ").replace("=", " = ").split("\\s+"); 
-			
+			text = text.replace(">=", " @GE@ ");
+			text = text.replace("<=", " @LE@ ");
+			text = text.replace("!=", " @NE@ ");
+
+			text = text.replace("(", " ( ");
+			text = text.replace(")", " ) ");
+			text = text.replace(",", " , ");
+			text = text.replace(";", " ; ");
+			text = text.replace("=", " = ");
+			text = text.replace("<", " < ");
+			text = text.replace(">", " > ");
+
+			text = text.replace("@GE@", ">=");
+			text = text.replace("@LE@", "<=");
+			text = text.replace("@NE@", "!=");
+
+			tokens = text.split("\\s+");
+
 			position = 0;
 		}
 
