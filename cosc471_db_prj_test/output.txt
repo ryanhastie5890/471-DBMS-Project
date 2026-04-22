@@ -1,0 +1,277 @@
+
+Running command: create database university;
+Database 'university' created.
+
+Running command: use university;
+Using database 'university'.
+
+Running command: create table x(id integer , name text);
+Table 'X' created.
+
+Running command: create table student(a
+text );
+Table 'STUDENT' created.
+
+Running command: select x,y,z
+from student
+where x=y or y!=z;
+Nothing found
+
+Running command: describe student;
+STUDENT
+A: TEXT
+
+
+Running command: let x select id,name from student;
+ERROR: id found, but KEY expected
+
+Running command: rename x(a,b,c);
+ERROR: Incorrect number of attributes
+
+Running command: insert student values("abc","x","aaa",1,2,"yy"
+);
+ERROR: Wrong number of attributes
+
+Running command: insert student values("abc","x","aaa",1,2.345,"yy");
+ERROR: Wrong number of attributes
+
+Running command: update student set x="abc",y=1,z="dd";
+Nothing found
+
+Running command: update student set x="abc",y=1,z="dd" where a<=b;
+Nothing found
+
+Running command: update student set x="abc",y=1,z="dd" where a>c or
+b=d;
+Nothing found
+
+Running command: update student set x="abc",y=1,z="dd";
+Nothing found
+
+Running command: delete
+student;
+All rows deleted from 'STUDENT'. Table structure kept.
+
+Running command: delete
+x;
+All rows deleted from 'X'. Table structure kept.
+
+Running command: use y;
+ERROR: Database not found
+
+Running command: Create student;
+ERROR: student found, but TABLE or DATABASE expected
+
+Running command: select from student;
+student found, but FROM expected
+
+Running command: select student;
+; found, but FROM expected
+
+Running command: create table student();
+ERROR: Table already exists
+
+Running command: create table student(id,id);
+ERROR: Table already exists
+
+Running command: use;
+ERROR: Database not found
+
+Running command: rename student);
+ERROR: ; found, but ( expected
+
+Running command: create database db3;
+Database 'db3' created.
+
+Running command: use db3;
+Using database 'db3'.
+
+Running command: create table st(id integer primary key, name text, gpa float);
+Table 'ST' created.
+
+Running command: create table prof
+(pname text
+,
+ssn integer);
+Table 'PROF' created.
+
+Running command: insert st values (3, "C", 3.0);
+1 row inserted into 'ST'.
+
+Running command: insert st values (2, "B", 2.0);
+1 row inserted into 'ST'.
+
+Running command: insert st values (
+1, "Abe", 3.5);
+1 row inserted into 'ST'.
+
+Running command: insert st values (2, "Berror", 2.0);
+Error: Duplicate primary key: 2
+
+Running command: insert st values (5, "E", 5);
+1 row inserted into 'ST'.
+
+Running command: insert st values (4, "D", 4.44);
+1 row inserted into 'ST'.
+
+Running command: insert st values (6, "F", 6.0);
+1 row inserted into 'ST'.
+
+Running command: insert st values (4, "Derror", 2.0);
+Error: Duplicate primary key: 4
+
+Running command: insert prof values ("ABE", 11);
+1 row inserted into 'PROF'.
+
+Running command: insert prof values ("C", 33);
+1 row inserted into 'PROF'.
+
+Running command: let st2 KEY ssn select name, gpa, ssn from st,prof where pname=name or
+gpa=3.0;
+Table 'ST2' created.
+Warning: Skipped row — Duplicate primary key: 11
+
+Running command: select name, gpa, ssn from st2;
+NAME	GPA	SSN
+1. Abe	3.5	11
+2. C	3.0	33
+
+Running command: select name, gpa, ssn from st2 where ssn=2;
+Nothing found
+
+Running command: select name, gpa, ssn from st2 where ssn=2 and gpa=3.0;
+Nothing found
+
+Running command: select name, gpa, ssn from st2 where ssn=2 and gpa!=3.0;
+Nothing found
+
+Running command: select name, gpa, ssn from st,prof where pname=name;
+NAME	GPA	SSN
+1. Abe	3.5	11
+2. C	3.0	33
+
+Running command: select name,ssn from prof,st where name=pname and gpa=3.0;
+NAME	SSN
+1. C	33
+
+Running command: select name,ssn from prof,st where name=pname or gpa=2.0;
+NAME	SSN
+1. Abe	11
+2. B	11
+3. B	33
+4. C	33
+
+Running command: select name,ssn from prof,st where name=pname and pname="C" and gpa=3.0;
+and found, but ; expected
+
+Running command: select gpa from student where gpa>=3.0 and gpa!=4.44;
+Error: Table 'student' does not exist.
+
+Running command: select name, gpa from student where id=3 and gpa=3.0 and name="C";
+and found, but ; expected
+
+Running command: select name, gpa from student where id!=3 and gpa=3.0 and name="C";
+and found, but ; expected
+
+Running command: create table third (x integer);
+Table 'THIRD' created.
+
+Running command: insert third values(1);
+1 row inserted into 'THIRD'.
+
+Running command: insert
+third values(2);
+1 row inserted into 'THIRD'.
+
+Running command: select name, ssn, x from third, st, prof where name=pname and id=x;
+NAME	SSN	X
+1. Abe	11	1
+
+Running command: delete st where name="Abe";
+1 row(s) deleted from 'ST'.
+
+Running command: delete prof where ssn>=33;
+1 row(s) deleted from 'PROF'.
+
+Running command: select ssn from prof;
+SSN
+1. 11
+
+Running command: select name, gpa, ssn from st,prof where pname=name;
+Nothing found
+
+Running command: describe prof;
+PROF
+PNAME: TEXT
+SSN: INT
+
+
+Running command: describe all;
+ST
+ID: INT PRIMARY KEY
+NAME: TEXT
+GPA: FLOAT
+
+PROF
+PNAME: TEXT
+SSN: INT
+
+ST2
+NAME: TEXT
+GPA: FLOAT
+SSN: INT PRIMARY KEY
+
+THIRD
+X: INT
+
+
+Running command: update st set gpa=0.00, name="X" where gpa != 4.0;
+5 row(s) updated in 'ST'.
+
+Running command: select name, gpa from student;
+Error: Table 'student' does not exist.
+
+Running command: update st set name="abc", gpa=1.1 where id=1;
+Nothing found
+
+Running command: update st set name="abc",id=2, gpa=3.0 where id < gpa;
+Nothing found
+
+Running command: Select name, gpa, id from st;
+NAME	GPA	ID
+1. X	0.0	2
+2. X	0.0	3
+3. X	0.0	4
+4. X	0.0	5
+5. X	0.0	6
+
+Running command: rename st (x,y,z);
+Table 'ST' columns renamed successfully.
+
+Running command: select y, z from st;
+Y	Z
+1. X	0.0
+2. X	0.0
+3. X	0.0
+4. X	0.0
+5. X	0.0
+
+Running command: describe st;
+ST
+X: INT PRIMARY KEY
+Y: TEXT
+Z: FLOAT
+
+
+Running command: Select max(gpa) from st;
+( found, but FROM expected
+
+Running command: Select min(gpa) from st where id>2 and name="John Doe";
+( found, but FROM expected
+
+Running command: Select average(gpa) from st where id>2;
+( found, but FROM expected
+
+Running command: Select count(*) from st where id>2 or name="John Doe";
+( found, but FROM expected
+Thank you for using this DBMS
