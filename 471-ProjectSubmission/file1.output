@@ -1,0 +1,305 @@
+Welcome to DBMS
+Enter Command:
+create database university;
+Database 'university' created.
+Enter Command:
+use university;
+Using database 'university'.
+Enter Command:
+create table x(id integer , name text);
+Table 'X' created.
+Enter Command:
+create table student(a
+
+text );
+Table 'STUDENT' created.
+Enter Command:
+select x,y,z
+
+from student
+
+where x=y or y!=z;
+Error: Wrong column names
+Enter Command:
+describe student;
+STUDENT
+A: TEXT
+
+Enter Command:
+let x select id,name from student;
+Command Failed, error message: id found, but KEY expected
+Enter Command:
+rename x(a,b,c)
+
+;
+Command Failed, error message: Incorrect number of attributes
+Enter Command:
+insert  student values("abc","x","aaa",1,2,"yy"
+
+)
+
+;
+Command Failed, error message: Wrong number of attributes
+Enter Command:
+insert  student values("abc","x","aaa",1,2.345,"yy");
+Command Failed, error message: Wrong number of attributes
+Enter Command:
+update student set x="abc",y=1,z="dd"
+
+;
+Wrong number of attributes, 1 expected
+Enter Command:
+update student set x="abc",y=1,z="dd" where a<=b
+
+;
+Wrong number of attributes, 1 expected
+Enter Command:
+update student set x="abc",y=1,z="dd" where a>c or
+
+b=d
+
+;
+Wrong number of attributes, 1 expected
+Enter Command:
+update student set x="abc",y=1,z="dd"
+
+;
+Wrong number of attributes, 1 expected
+Enter Command:
+delete
+
+student
+
+;
+All rows deleted from 'STUDENT'. Table structure kept.
+Enter Command:
+delete
+
+x;
+All rows deleted from 'X'. Table structure kept.
+Enter Command:
+use y;
+Command Failed, error message: Database not found
+Enter Command:
+Create student;
+Command Failed, error message: student found, but TABLE or DATABASE expected
+Enter Command:
+select from student;
+student found, but FROM expected
+Enter Command:
+select student;
+; found, but FROM expected
+Enter Command:
+create table student();
+Command Failed, error message: Table already exists
+Enter Command:
+create table student(id,id);
+Command Failed, error message: Table already exists
+Enter Command:
+use;
+Command Failed, error message: Database not found
+Enter Command:
+rename student);
+Command Failed, error message: ; found, but ( expected
+Enter Command:
+create database db3;
+Database 'db3' created.
+Enter Command:
+use db3;
+Using database 'db3'.
+Enter Command:
+create table st(id integer primary key, name text, gpa float);
+Table 'ST' created.
+Enter Command:
+create table prof
+
+(pname text 
+
+,
+
+ssn integer);
+Table 'PROF' created.
+Enter Command:
+insert  st values (3, "C", 3.0);
+1 row inserted into 'ST'.
+Enter Command:
+insert  st values (2, "B", 2.0); 
+1 row inserted into 'ST'.
+Enter Command:
+insert  st values (
+
+1, "Abe", 3.5);
+1 row inserted into 'ST'.
+Enter Command:
+insert  st values (2, "Berror", 2.0);
+Error: Duplicate primary key: 2
+Enter Command:
+insert  st values (5, "E", 5);
+1 row inserted into 'ST'.
+Enter Command:
+insert  st values (4, "D", 4.44);
+1 row inserted into 'ST'.
+Enter Command:
+insert  st values (6, "F", 6.0); 
+1 row inserted into 'ST'.
+Enter Command:
+insert  st values (4, "Derror", 2.0);
+Error: Duplicate primary key: 4
+Enter Command:
+insert  prof values ("ABE", 11);
+1 row inserted into 'PROF'.
+Enter Command:
+insert  prof values ("C", 33);
+1 row inserted into 'PROF'.
+Enter Command:
+let st2 KEY ssn select name, gpa, ssn from st,prof where pname=name or gpa=3.0;
+Table 'ST2' created.
+Warning: Skipped row — Duplicate primary key: 11
+Enter Command:
+select name, gpa, ssn from st2;
+NAME	GPA	SSN
+1. Abe	3.5	11
+2. C	3.0	33
+Enter Command:
+select name, gpa, ssn from st2 where ssn=2;
+Nothing found
+Enter Command:
+select name, gpa, ssn from st2 where ssn=2 and gpa=3.0;
+Nothing found
+Enter Command:
+select name, gpa, ssn from st2 where ssn=2 and gpa!=3.0;
+Nothing found
+Enter Command:
+select name, gpa, ssn from st,prof where pname=name;
+NAME	GPA	SSN
+1. Abe	3.5	11
+2. C	3.0	33
+Enter Command:
+select name,ssn from prof,st where name=pname and gpa=3.0;
+NAME	SSN
+1. C	33
+Enter Command:
+select name,ssn from prof,st where name=pname or gpa=2.0;
+NAME	SSN
+1. Abe	11
+2. B	11
+3. B	33
+4. C	33
+Enter Command:
+select name,ssn from prof,st where name=pname and pname="C" and gpa=3.0;
+NAME	SSN
+1. C	33
+Enter Command:
+select gpa from student where gpa>=3.0 and gpa!=4.44;
+Could not find table
+Enter Command:
+select name, gpa from student where id=3 and gpa=3.0 and name="C";
+Could not find table
+Enter Command:
+select name, gpa from student where id!=3 and gpa=3.0 and name="C";
+Could not find table
+Enter Command:
+create table third (x integer);
+Table 'THIRD' created.
+Enter Command:
+insert  third values(1);
+1 row inserted into 'THIRD'.
+Enter Command:
+insert  
+third values(2);
+1 row inserted into 'THIRD'.
+Enter Command:
+select name, ssn, x from third, st, prof where name=pname and id=x;
+NAME	SSN	X
+1. Abe	11	1
+Enter Command:
+delete st where name="Abe";
+1 row(s) deleted from 'ST'.
+Enter Command:
+delete prof where ssn>=33;
+1 row(s) deleted from 'PROF'.
+Enter Command:
+select ssn from prof;
+SSN
+1. 11
+Enter Command:
+select name, gpa, ssn from st,prof where pname=name;
+Nothing found
+Enter Command:
+describe prof;
+PROF
+PNAME: TEXT
+SSN: INT
+
+Enter Command:
+describe all;
+ST
+ID: INT PRIMARY KEY
+NAME: TEXT
+GPA: FLOAT
+
+PROF
+PNAME: TEXT
+SSN: INT
+
+ST2
+NAME: TEXT
+GPA: FLOAT
+SSN: INT PRIMARY KEY
+
+THIRD
+X: INT
+
+Enter Command:
+update st set gpa=0.00, name="X" where gpa != 4.0;
+5 row(s) updated in 'ST'.
+Enter Command:
+select name, gpa from student;
+Could not find table
+Enter Command:
+update st set name="abc", gpa=1.1 where id=1;
+Nothing found
+Enter Command:
+update st set name="abc",id=2, gpa=3.0 where id < gpa;
+Nothing found
+Enter Command:
+Select name, gpa, id from st;
+NAME	GPA	ID
+1. X	0.0	2
+2. X	0.0	3
+3. X	0.0	4
+4. X	0.0	5
+5. X	0.0	6
+Enter Command:
+rename st (x,y,z);
+Table 'ST' columns renamed successfully.
+Enter Command:
+select y, z from st;
+Y	Z
+1. X	0.0
+2. X	0.0
+3. X	0.0
+4. X	0.0
+5. X	0.0
+Enter Command:
+describe st;
+ST
+X: INT PRIMARY KEY
+Y: TEXT
+Z: FLOAT
+
+Enter Command:
+Select max(gpa) from st;
+( found, but FROM expected
+Enter Command:
+Select min(gpa) from st where id>2 and name="John Doe";
+( found, but FROM expected
+Enter Command:
+Select average(gpa) from st where id>2;
+( found, but FROM expected
+Enter Command:
+Select count(*) from st where id>2 or name="John Doe";
+( found, but FROM expected
+Enter Command:
+exit;
+Thank you for using this DBMS
